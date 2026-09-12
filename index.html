@@ -20,8 +20,12 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%}
 body{background:var(--void);color:var(--tx);font-family:var(--ui);line-height:1.5;padding-bottom:82px}
-body::before{content:'';position:fixed;inset:0 0 auto;height:340px;pointer-events:none;z-index:0;
- background:radial-gradient(ellipse 110% 100% at 50% -25%,rgba(63,224,172,.15),transparent 70%)}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+ background:radial-gradient(ellipse 90% 55% at 18% -12%,rgba(63,224,172,.20),transparent 62%),
+ radial-gradient(ellipse 80% 50% at 88% 8%,rgba(180,143,232,.14),transparent 60%),
+ radial-gradient(ellipse 70% 45% at 50% 104%,rgba(255,180,67,.09),transparent 62%);
+ animation:deriva 26s ease-in-out infinite alternate}
+@keyframes deriva{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(0,-16px,0) scale(1.06)}}
 .wrap{max-width:740px;margin:0 auto;padding:20px 15px;position:relative;z-index:1}
 .eyebrow{font-family:var(--mono);font-size:9.5px;letter-spacing:.19em;text-transform:uppercase;color:var(--tx3)}
 h1{font-family:var(--disp);font-variation-settings:'SOFT' 24,'WONK' 1;font-weight:400;font-size:29px;line-height:1.08;letter-spacing:-.025em;margin:4px 0}
@@ -38,7 +42,27 @@ section{margin-top:26px}
 .hero .lbl{font-family:var(--mono);font-size:9.5px;letter-spacing:.19em;text-transform:uppercase;color:var(--tx3)}
 .hero .big{font-family:var(--mono);font-size:clamp(34px,10.5vw,48px);font-weight:600;letter-spacing:-.045em;line-height:1.02;margin-top:7px}
 .hero .sec{font-family:var(--mono);font-size:14.5px;color:var(--tx2);margin-top:4px}
-.hero .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;position:relative;z-index:1}
+.hero .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;position:relative;z-index:2}
+.hero .lbl,.hero .big,.hero .sec{position:relative;z-index:2}
+.heroChart{position:absolute;left:0;right:0;bottom:0;width:100%;height:62%;z-index:0;opacity:.85}
+.heroTop{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:2}
+.monTog{display:flex;gap:3px;background:rgba(0,0,0,.3);border-radius:100px;padding:3px}
+.monTog button{background:none;border:none;color:var(--tx3);font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:100px;cursor:pointer;transition:.2s;letter-spacing:.06em}
+.monTog button.on{background:var(--mint);color:#03231A;font-weight:700}
+.donut{display:flex;align-items:center;gap:18px}
+.donut svg{width:112px;height:112px;flex-shrink:0}
+.dl{display:flex;align-items:center;gap:9px;padding:5px 0;font-size:12.5px}
+.dl .dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+.dl .n{flex:1;color:var(--tx2)}
+.ch24{font-family:var(--mono);font-size:10.5px;padding:2px 6px;border-radius:5px;display:inline-block}
+.ch24.up{background:rgba(63,224,172,.14);color:var(--mint)}
+.ch24.dn{background:rgba(255,122,104,.14);color:var(--coral)}
+.entra{animation:entra .5s cubic-bezier(.2,.9,.3,1) backwards}
+@keyframes entra{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.pulso{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--mint);margin-right:5px;animation:lat 2.4s ease-in-out infinite}
+@keyframes lat{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(63,224,172,.5)}50%{opacity:.5;box-shadow:0 0 0 5px rgba(63,224,172,0)}}
+.evo{background:var(--sup);border:1px solid var(--line);border-radius:16px;padding:16px 10px 10px;overflow:hidden}
+.evo svg{width:100%;height:auto;display:block}
 .pill{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:100px;font-family:var(--mono);font-size:11.5px;font-weight:500;border:1px solid transparent}
 .pill.up{background:rgba(63,224,172,.14);color:var(--mint);border-color:rgba(63,224,172,.3)}
 .pill.dn{background:rgba(255,122,104,.14);color:var(--coral);border-color:rgba(255,122,104,.3)}
@@ -124,7 +148,11 @@ nav button.on{color:var(--mint)}
   <h1 id="titulo">Acumulación</h1>
   <div style="font-size:13px;color:var(--tx2);margin-bottom:18px" id="subtitulo"></div>
   <div class="hero">
-    <div class="lbl">Valor total · todos los planes</div>
+    <svg class="heroChart" id="heroChart" viewBox="0 0 400 120" preserveAspectRatio="none"></svg>
+    <div class="heroTop">
+      <div class="lbl">Valor total · todos los planes</div>
+      <div class="monTog" id="monTog"></div>
+    </div>
     <div class="big" id="salP">—</div>
     <div class="sec" id="salS"></div>
     <div class="row" id="pills"></div>
@@ -135,11 +163,16 @@ nav button.on{color:var(--mint)}
     <div class="mc"><div class="k">Aporte/mes</div><div class="v" id="mRitmo">—</div></div>
   </div>
   <div id="pendientesInicio"></div>
-  <section><div class="head"><h2>Activos</h2><span class="eyebrow" id="ebAct"></span></div>
+  <section class="entra" style="animation-delay:.05s"><div class="head"><h2>Evolución</h2><span class="eyebrow" id="ebEvo"></span></div>
+    <div class="evo"><svg id="svgEvo" viewBox="0 0 700 220"></svg>
+      <div class="leg"><span style="color:var(--mint)">━ valor</span><span>┈ invertido</span></div></div></section>
+  <section class="entra" style="animation-delay:.1s"><div class="head"><h2>Reparto</h2><span class="eyebrow">real vs objetivo</span></div>
+    <div class="card"><div class="donut"><svg id="svgDonut" viewBox="0 0 100 100"></svg><div style="flex:1;min-width:0" id="donutDet"></div></div></div></section>
+  <section class="entra" style="animation-delay:.15s"><div class="head"><h2>Activos</h2><span class="eyebrow" id="ebAct"></span></div>
     <div class="card" id="listaAct"></div></section>
-  <section><div class="head"><h2>Custodia</h2><span class="eyebrow">dónde está cada moneda</span></div>
+  <section class="entra" style="animation-delay:.2s"><div class="head"><h2>Custodia</h2><span class="eyebrow">dónde está cada moneda</span></div>
     <div class="card" id="custodia"></div></section>
-  <section><div class="head"><h2>Hitos</h2><span class="eyebrow" id="ebHitos"></span></div>
+  <section class="entra" style="animation-delay:.25s"><div class="head"><h2>Hitos</h2><span class="eyebrow" id="ebHitos"></span></div>
     <div class="card" id="hitos"></div></section>
 </div></div>
 
@@ -263,13 +296,14 @@ const PLANES_DEF=[
   activos:{BTC:70,ETH:30},comision:1.2,automatico:true,activo:true}];
 
 let cfg=JSON.parse(JSON.stringify(DEF)), planes=JSON.parse(JSON.stringify(PLANES_DEF));
-let compras=[], transfers=[], precios={}, athx={}, tasas={}, mesVista=new Date(), editId=null, modalPlan=null;
+let compras=[], transfers=[], omitidas=[], precios={}, athx={}, tasas={}, camb={}, mesVista=new Date(), editId=null, modalPlan=null;
+let verMon='USD';
 
 /* ============ persistencia + migración ============ */
-async function guardar(){try{await window.storage.set('dca:v4',JSON.stringify({cfg,planes,compras,transfers}));}catch(e){}}
+async function guardar(){try{await window.storage.set('dca:v4',JSON.stringify({cfg,planes,compras,transfers,omitidas,verMon}));}catch(e){}}
 async function cargar(){
  try{const r=await window.storage.get('dca:v4');if(r&&r.value){const d=JSON.parse(r.value);
-  cfg={...DEF,...(d.cfg||{})};planes=d.planes||planes;compras=d.compras||[];transfers=d.transfers||[];return;}}catch(e){}
+  cfg={...DEF,...(d.cfg||{})};planes=d.planes||planes;compras=d.compras||[];transfers=d.transfers||[];omitidas=d.omitidas||[];verMon=d.verMon||'USD';return;}}catch(e){}
  try{const r=await window.storage.get('dca:v3');if(r&&r.value){const d=JSON.parse(r.value);const o=d.cfg||{};
   cfg={...DEF,titulo:o.titulo||DEF.titulo,sub:o.sub||DEF.sub,m1:o.m1||'USD',m2:o.m2||'ARS',feriados:o.feriados||FER_DEF,
    ancla:o.ancla||'halving',halving:o.halving||DEF.halving,fechaObjetivo:o.fechaObjetivo||DEF.fechaObjetivo,
@@ -292,6 +326,12 @@ function fMon(v,m){if(v==null||isNaN(v))return '—';const dec=(m==='ARS'||m==='
  catch(e){return m+' '+v.toFixed(dec);}}
 const px=(s,m)=>(precios[s]&&precios[s][m.toLowerCase()])||null;
 const aUSD=(monto,mon)=>mon==='USD'?monto:(tasas[mon]?monto/tasas[mon]:null);
+const deUSD=(u,mon)=>mon==='USD'?u:(tasas[mon]?u*tasas[mon]:null);
+const otraMon=()=>verMon==='USD'?(cfg.m2==='USD'?'ARS':cfg.m2):'USD';
+function dual(usd,cls){const a=deUSD(usd,verMon),b=deUSD(usd,otraMon());
+ return `<div class="num" style="font-size:inherit">${fMon(a,verMon)}</div>`+(b!=null?`<div class="num" style="font-size:.62em;color:var(--tx3);margin-top:2px">${fMon(b,otraMon())}</div>`:'');}
+function anim(el,val,mon){const d=1000,t0=performance.now(),v0=+el.dataset.v||0;el.dataset.v=val;
+ const f=t=>{const k=Math.min(1,(t-t0)/d),e=1-Math.pow(1-k,3);el.textContent=fMon(v0+(val-v0)*e,mon);if(k<1)requestAnimationFrame(f);};requestAnimationFrame(f);}
 const esFeriado=d=>(cfg.feriados||[]).includes(iso(d));
 const esHabil=d=>{const w=d.getDay();return w>0&&w<6&&!esFeriado(d);};
 function nHabil(desde,n){let c=0,x=new Date(desde);while(c<n){x.setDate(x.getDate()+1);if(esHabil(x))c++;}return x;}
@@ -327,15 +367,17 @@ function pendientes(){
   const desde=new Date(hoy.getTime()-60*DIA);
   for(let d=new Date(desde);d<=hoy;d.setDate(d.getDate()+1)){
    if(!esProgramado(p,d))continue;const k=iso(d);
-   if(!compras.some(c=>c.planId===p.id&&c.f===k))out.push({plan:p,f:k});}});
+   if(compras.some(c=>c.planId===p.id&&c.f===k))continue;
+   if(omitidas.some(o=>o.planId===p.id&&o.f===k))continue;
+   out.push({plan:p,f:k});}});
  return out.sort((a,b)=>a.f.localeCompare(b.f));}
 
 /* ============ precios ============ */
 async function traerPrecios(){
  const A=todosActivos(),ids=A.map(a=>a.cg).filter(Boolean).join(',');
  if(ids){const mons=[...new Set([cfg.m1,cfg.m2,'USD',...planes.map(p=>p.moneda)])];
-  try{const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=${mons.join(',').toLowerCase()}`);
-   const j=await r.json();precios={};A.forEach(a=>{if(j[a.cg])precios[a.s]=j[a.cg];});
+  try{const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=${mons.join(',').toLowerCase()}&include_24hr_change=true`);
+   const j=await r.json();precios={};camb={};A.forEach(a=>{if(j[a.cg]){precios[a.s]=j[a.cg];camb[a.s]=j[a.cg].usd_24h_change;}});
    const ref=A.find(a=>precios[a.s]&&precios[a.s].usd);
    if(ref)mons.forEach(m=>{const v=precios[ref.s][m.toLowerCase()];if(v)tasas[m]=v/precios[ref.s].usd;});}catch(e){}
   try{const r2=await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}`);
@@ -358,15 +400,24 @@ function pintarInicio(){
  const A=todosActivos(),t=tenencia(),inv=invertido();
  document.getElementById('titulo').textContent=cfg.titulo;document.getElementById('subtitulo').textContent=cfg.sub;
  document.getElementById('ebTop').textContent=`${planes.filter(p=>p.activo).length} planes activos · ${A.length} activos`;
- const v1=valorEn(cfg.m1),v2=valorEn(cfg.m2),usd=valorEn('USD');
- document.getElementById('salP').textContent=v1!=null?fMon(v1,cfg.m1):fMon(0,cfg.m1);
- document.getElementById('salS').textContent=(v2!=null&&cfg.m2!==cfg.m1)?fMon(v2,cfg.m2):'';
- const pnl=usd!=null?usd-inv:0,pc=inv?pnl/inv*100:0;
- document.getElementById('pills').innerHTML=`<span class="pill ${pnl>=0?'up':'dn'}">${pnl>=0?'▲':'▼'} ${fMon(Math.abs(pnl),'USD')} · ${pc>=0?'+':''}${pc.toFixed(1)}%</span><span class="pill nt">${compras.length} compras</span>`;
- document.getElementById('mInv').textContent=fMon(inv,'USD');
- const me=document.getElementById('mPnl');me.textContent=(pnl>=0?'+':'')+fMon(pnl,'USD');me.style.color=pnl>=0?'var(--mint)':'var(--coral)';
+ const usd=valorEn('USD')||0;
+ const MONS=[...new Set(['USD',cfg.m2==='USD'?'ARS':cfg.m2])];
+ document.getElementById('monTog').innerHTML=MONS.map(m=>`<button class="${verMon===m?'on':''}" data-m="${m}">${m}</button>`).join('');
+ document.querySelectorAll('#monTog button').forEach(b=>b.onclick=async()=>{verMon=b.dataset.m;await guardar();pintar();});
+ const vv=deUSD(usd,verMon),vo=deUSD(usd,otraMon());
+ anim(document.getElementById('salP'),vv!=null?vv:0,verMon);
+ document.getElementById('salS').textContent=vo!=null?fMon(vo,otraMon()):'';
+ const pnl=usd-inv,pc=inv?pnl/inv*100:0;
+ // cambio 24h ponderado de la cartera
+ let c24=0,base=0;A.forEach(a=>{const q=t[a.s]||0,p=px(a.s,'USD');if(p&&camb[a.s]!=null){c24+=q*p*camb[a.s];base+=q*p;}});
+ const ch=base>0?c24/base:null;
+ document.getElementById('pills').innerHTML=`<span class="pill ${pnl>=0?'up':'dn'}">${pnl>=0?'▲':'▼'} ${fMon(Math.abs(deUSD(pnl,verMon)),verMon)} · ${pc>=0?'+':''}${pc.toFixed(1)}%</span>`+
+  (ch!=null?`<span class="pill ${ch>=0?'up':'dn'}">24h ${ch>=0?'+':''}${ch.toFixed(2)}%</span>`:'')+
+  `<span class="pill nt"><span class="pulso"></span>${compras.length} compras</span>`;
+ document.getElementById('mInv').innerHTML=dual(inv);
+ const me=document.getElementById('mPnl');me.innerHTML=dual(pnl);me.style.color=pnl>=0?'var(--mint)':'var(--coral)';
  const ritmo=planes.filter(p=>p.activo).reduce((s,p)=>s+ritmoPlanUSD(p),0);
- document.getElementById('mRitmo').textContent=fMon(ritmo,'USD');
+ document.getElementById('mRitmo').innerHTML=dual(ritmo);
  const obj={};planes.filter(p=>p.activo).forEach(p=>{const r=ritmoPlanUSD(p);Object.entries(p.activos).forEach(([s,w])=>{obj[s]=(obj[s]||0)+r*w/100;});});
  const totObj=Object.values(obj).reduce((a,b)=>a+b,0)||1;
  document.getElementById('ebAct').textContent='objetivo consolidado';
@@ -376,7 +427,7 @@ function pintarInicio(){
   return `<div class="act"><div class="chip" style="background:${a.c}">${a.s.slice(0,3)}</div>
    <div class="info"><div class="nm">${a.n}</div><div class="qt">${q.toFixed(q<1?6:4)} ${a.s}${a.s==='BTC'?' · '+Math.round(q*1e8).toLocaleString('es-AR')+' sats':''}</div>
     <div class="barra"><i style="width:${Math.min(real,100)}%;background:${a.c}"></i><u style="left:${objp}%"></u></div></div>
-   <div class="val"><div class="a">${val!=null?fMon(val,cfg.m1):'—'}</div><div class="b">${real.toFixed(1)}% / ${objp.toFixed(0)}%</div></div></div>`;}).join('')
+   <div class="val">${val!=null?dual(q*pu):'—'}<div class="b" style="margin-top:3px">${real.toFixed(1)}% / ${objp.toFixed(0)}%${camb[a.s]!=null?` <span class="ch24 ${camb[a.s]>=0?'up':'dn'}">${camb[a.s]>=0?'+':''}${camb[a.s].toFixed(1)}%</span>`:''}</div></div></div>`;}).join('')
   :'<div class="vacio">Sin activos. Creá un plan.</div>';
  const tc=tenenciaCust();
  document.getElementById('custodia').innerHTML=Object.keys(tc).length?Object.entries(tc).map(([k,v])=>{
@@ -385,7 +436,7 @@ function pintarInicio(){
   const alerta=k!=='Wallet fría'&&vusd>=600?'<div class="aviso" style="margin-top:8px">Pasaste los US$600 acá. Hora de mover a wallet fría.</div>':
    (k!=='Wallet fría'&&vusd>=300?'<div class="aviso" style="margin-top:8px">Pasaste los US$300: el retiro on-chain ya baja del 2%.</div>':'');
   return `<div style="padding:11px 0;border-bottom:1px solid rgba(28,58,68,.5)"><div style="display:flex;justify-content:space-between;align-items:baseline">
-   <div style="font-weight:600;font-size:14px">${k}</div><div class="num" style="font-size:14px">${fMon(vusd,'USD')}</div></div>
+   <div style="font-weight:600;font-size:14px">${k}</div><div style="text-align:right;font-size:14px">${dual(vusd)}</div></div>
    <div class="num" style="font-size:10.5px;color:var(--tx3);margin-top:3px">${items||'vacía'}</div>${alerta}</div>`;}).join('')
   :'<div class="vacio">Todavía no hay tenencias.</div>';
  const pend=pendientes();
@@ -393,16 +444,66 @@ function pintarInicio(){
  document.getElementById('badgePend').style.display=pend.length?'block':'none';document.getElementById('badgePend').textContent=pend.length;
  pintarHitos();}
 
+/* ---- gráfico de evolución ---- */
+function serieValor(){
+ const ord=compras.slice().sort((a,b)=>a.f.localeCompare(b.f));if(!ord.length)return [];
+ const t={},pts=[];let inv=0;
+ ord.forEach(c=>{c.items.forEach(i=>{t[i.a]=(t[i.a]||0)+ +i.q;});inv+=+c.usd||0;
+  let v=0;for(const sy in t){const pr=(c.items.find(i=>i.a===sy)||{}).p||px(sy,'USD');if(pr)v+=t[sy]*pr;}
+  pts.push({f:c.f,v,inv});});
+ const hoy=valorEn('USD');if(hoy!=null)pts.push({f:iso(new Date()),v:hoy,inv});
+ return pts;}
+function pintarEvo(){
+ const p=serieValor(),sv=document.getElementById('svgEvo'),hc=document.getElementById('heroChart');
+ if(p.length<2){sv.innerHTML=`<text x="350" y="110" fill="#5C7B87" font-family="IBM Plex Mono" font-size="11" text-anchor="middle">registrá dos compras y aparece la curva</text>`;hc.innerHTML='';document.getElementById('ebEvo').textContent='';return;}
+ const vs=p.map(x=>deUSD(x.v,verMon)),iv=p.map(x=>deUSD(x.inv,verMon));
+ const mn=Math.min(...vs,...iv)*.97,mx=Math.max(...vs,...iv)*1.05,rg=mx-mn||1,up=vs[vs.length-1]>=iv[iv.length-1];
+ const col=up?'#3FE0AC':'#FF7A68';
+ const mk=(W,H,pad)=>{const X=i=>i/(p.length-1)*W,Y=v=>H-pad-((v-mn)/rg)*(H-pad*2);
+  const ln=a=>a.map((v,i)=>`${i?'L':'M'} ${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join(' ');return {ln,X,Y};};
+ // grande
+ {const W=700,H=220,{ln,X,Y}=mk(W,H,18);
+  sv.innerHTML=`<defs><linearGradient id="ev" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${col}" stop-opacity=".35"/><stop offset="100%" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>
+   <path d="${ln(vs)} L ${W} ${H} L 0 ${H} Z" fill="url(#ev)"/>
+   <path d="${ln(iv)}" fill="none" stroke="#5C7B87" stroke-width="1.4" stroke-dasharray="4 4"/>
+   <path d="${ln(vs)}" fill="none" stroke="${col}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
+   <circle cx="${X(p.length-1)}" cy="${Y(vs[vs.length-1])}" r="10" fill="${col}" opacity=".2"/>
+   <circle cx="${X(p.length-1)}" cy="${Y(vs[vs.length-1])}" r="4.5" fill="${col}" stroke="#0C1B21" stroke-width="2"/>`;}
+ // mini en el hero
+ {const W=400,H=120,{ln}=mk(W,H,10);
+  hc.innerHTML=`<defs><linearGradient id="hv" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${col}" stop-opacity=".30"/><stop offset="100%" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>
+   <path d="${ln(vs)} L ${W} ${H} L 0 ${H} Z" fill="url(#hv)"/><path d="${ln(vs)}" fill="none" stroke="${col}" stroke-width="1.8" opacity=".75"/>`;}
+ const d0=deUSD(p[0].v,verMon),d1=vs[vs.length-1];
+ document.getElementById('ebEvo').textContent=`${p.length} puntos · ${d0>0?((d1/d0-1)*100).toFixed(0)+'%':''}`;}
+
+/* ---- donut de reparto ---- */
+function pintarDonut(){
+ const A=todosActivos(),t=tenencia(),tot=valorEn('USD')||0,sv=document.getElementById('svgDonut');
+ const obj={};planes.filter(p=>p.activo).forEach(p=>{const r=ritmoPlanUSD(p);Object.entries(p.activos).forEach(([sy,w])=>{obj[sy]=(obj[sy]||0)+r*w/100;});});
+ const totObj=Object.values(obj).reduce((a,b)=>a+b,0)||1;
+ const dat=A.map(a=>({...a,real:tot>0&&px(a.s,'USD')?(t[a.s]||0)*px(a.s,'USD')/tot*100:0,obj:(obj[a.s]||0)/totObj*100}));
+ const st=dat.reduce((s_,d)=>s_+d.real,0);let off=0,g='<circle cx="50" cy="50" r="38" fill="none" stroke="#13272F" stroke-width="14"/>';
+ dat.forEach(d=>{const len=(st>0?d.real/st:0)*238.76;
+  g+=`<circle cx="50" cy="50" r="38" fill="none" stroke="${d.c}" stroke-width="14" stroke-dasharray="${len.toFixed(2)} 238.76" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 50 50)"><animate attributeName="stroke-dasharray" from="0 238.76" to="${len.toFixed(2)} 238.76" dur=".8s" fill="freeze"/></circle>`;off+=len;});
+ g+=`<text x="50" y="47" fill="#EDF8F5" font-family="IBM Plex Mono" font-size="14" font-weight="600" text-anchor="middle">${A.length}</text><text x="50" y="59" fill="#5C7B87" font-family="IBM Plex Mono" font-size="6.5" text-anchor="middle">ACTIVOS</text>`;
+ sv.innerHTML=g;
+ document.getElementById('donutDet').innerHTML=dat.map(d=>`<div class="dl"><span class="dot" style="background:${d.c}"></span><span class="n">${d.n}</span>
+  <span class="num" style="font-size:12px">${d.real.toFixed(1)}%</span><span class="num" style="font-size:11px;color:var(--tx3)">/${d.obj.toFixed(0)}%</span></div>`).join('')||'<div class="mini">Sin activos.</div>';}
+
 /* ============ PLANES ============ */
 function pintarPlanes(){
  const pend=pendientes();
  document.getElementById('pendientes').innerHTML=pend.length?`<div class="eyebrow" style="margin-bottom:8px">Por confirmar · ${pend.length}</div>`+
-  pend.slice(0,8).map(x=>{const A=actPlan(x.plan);
-   return `<div class="pend"><div class="chip" style="background:${x.plan.color};width:30px;height:30px;font-size:8px">${x.plan.nombre.slice(0,3).toUpperCase()}</div>
-    <div class="i"><div style="font-size:13px;font-weight:600">${x.plan.nombre} · ${fFecha(new Date(x.f+'T12:00'))}</div>
-     <div class="num" style="font-size:10.5px;color:var(--tx3)">esperado ${fMon(aporteProm(x.plan),x.plan.moneda)} · ${A.map(a=>a.pct+'% '+a.s).join(' / ')}</div></div>
-    <button class="pri" style="width:auto;padding:9px 14px;font-size:12px" onclick="abrirModal('${x.f}',null,'${x.plan.id}')">Confirmar</button></div>`;}).join('')
-  +(pend.length>8?`<div class="mini">…y ${pend.length-8} más.</div>`:''):'';
+  pend.slice(0,10).map(x=>{const A=actPlan(x.plan);
+   return `<div class="pend"><div style="display:flex;align-items:center;gap:11px">
+     <div class="chip" style="background:${x.plan.color};width:30px;height:30px;font-size:8px">${x.plan.nombre.slice(0,3).toUpperCase()}</div>
+     <div class="i"><div style="font-size:13px;font-weight:600">${x.plan.nombre}</div>
+      <div class="num" style="font-size:10.5px;color:var(--tx3)">${fFecha(new Date(x.f+'T12:00'))} · esperado ${fMon(aporteProm(x.plan),x.plan.moneda)} · ${A.map(a=>a.pct+'% '+a.s).join(' / ')}</div></div></div>
+    <div style="display:flex;gap:6px;margin-top:10px">
+     <button class="pri" style="flex:2;padding:9px;font-size:12px" onclick="abrirModal('${x.f}',null,'${x.plan.id}')">Confirmar</button>
+     <button class="sec" style="flex:1;padding:9px;font-size:12px" onclick="omitir('${x.plan.id}','${x.f}','sin fondos')">Omitir</button>
+     <button class="sec" style="flex:1;padding:9px;font-size:12px;color:var(--coral)" onclick="omitir('${x.plan.id}','${x.f}','no se ejecutó')">No ocurrió</button></div></div>`;}).join('')
+  +(pend.length>10?`<div class="mini">…y ${pend.length-10} más.</div>`:'')+(omitidas.length?`<div class="mini" style="display:flex;justify-content:space-between;align-items:center"><span>${omitidas.length} omitidas</span><button class="sec" style="width:auto;padding:5px 10px;font-size:11px" onclick="verOmitidas()">Ver / restaurar</button></div>`:''):(omitidas.length?`<div class="mini" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><span>${omitidas.length} compras omitidas</span><button class="sec" style="width:auto;padding:5px 10px;font-size:11px" onclick="verOmitidas()">Ver / restaurar</button></div>`:'');
  document.getElementById('listaPlanes').innerHTML=planes.map(p=>{const A=actPlan(p),prox=proxProgramado(p);
   const n=prox?dias(new Date(new Date().setHours(0,0,0,0)),prox):null;
   const cs=compras.filter(c=>c.planId===p.id&&(c.tipo||'dca')==='dca');
@@ -415,29 +516,38 @@ function pintarPlanes(){
    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:11px">${A.map(a=>`<span class="pill nt" style="border-color:${a.c}44"><span style="width:7px;height:7px;border-radius:2px;background:${a.c};display:inline-block"></span>${a.s} ${a.pct}%</span>`).join('')}</div>
    <div class="mg" style="margin-top:11px">
     <div class="mc" style="padding:9px"><div class="k">Aporte</div><div class="v" style="font-size:13px">${fMon(aporteProm(p),p.moneda)}</div></div>
-    <div class="mc" style="padding:9px"><div class="k">Por mes</div><div class="v" style="font-size:13px">${fMon(ritmoPlanUSD(p),'USD')}</div></div>
-    <div class="mc" style="padding:9px"><div class="k">Invertido</div><div class="v" style="font-size:13px">${fMon(invp,'USD')}</div></div></div>
+    <div class="mc" style="padding:9px"><div class="k">Por mes</div><div class="v" style="font-size:13px">${dual(ritmoPlanUSD(p))}</div></div>
+    <div class="mc" style="padding:9px"><div class="k">Invertido</div><div class="v" style="font-size:13px">${dual(invp)}</div></div></div>
    ${prox&&p.activo?`<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:11px;border-top:1px solid rgba(28,58,68,.5)">
     <div><div style="font-size:13px">Próxima: <b>${fFecha(prox)}</b></div><div class="mini" style="margin:0">${n===0?'es hoy':n===1?'mañana':'en '+n+' días'}${p.automatico?' · se ejecuta sola':''}</div></div>
     <button class="pri" style="width:auto;padding:9px 14px;font-size:12px" onclick="abrirModal('${iso(prox)}',null,'${p.id}')">${p.automatico?'Confirmar':'Registrar'}</button></div>`:''}
    <div class="f2" style="margin-top:11px"><button class="sec" onclick="editarPlan('${p.id}')">Editar plan</button>
     <button class="sec" onclick="togglePlan('${p.id}')">${p.activo?'Pausar':'Activar'}</button></div></div>`;}).join('');
  const obj={};let tot=0;planes.filter(p=>p.activo).forEach(p=>{const r=ritmoPlanUSD(p);tot+=r;Object.entries(p.activos).forEach(([s,w])=>{obj[s]=(obj[s]||0)+r*w/100;});});
- document.getElementById('consolidado').innerHTML=tot?`<div style="font-size:12.5px;color:var(--tx2);margin-bottom:10px">Sumando todos los planes activos, tu aporte mensual de ${fMon(tot,'USD')} se reparte así:</div>`+
+ document.getElementById('consolidado').innerHTML=tot?`<div style="font-size:12.5px;color:var(--tx2);margin-bottom:10px">Sumando todos los planes activos, tu aporte mensual de ${fMon(deUSD(tot,verMon),verMon)} se reparte así:</div>`+
   Object.entries(obj).sort((a,b)=>b[1]-a[1]).map(([s,v])=>{const a=CAT.find(c=>c.s===s)||{c:'#888',n:s};
    return `<div class="act" style="padding:8px 0"><div class="chip" style="background:${a.c};width:28px;height:28px;font-size:8px">${s.slice(0,3)}</div>
     <div class="info"><div class="nm" style="font-size:13px">${a.n}</div><div class="barra"><i style="width:${v/tot*100}%;background:${a.c}"></i></div></div>
-    <div class="val"><div class="a" style="font-size:13px">${(v/tot*100).toFixed(1)}%</div><div class="b">${fMon(v,'USD')}/mes</div></div></div>`;}).join('')
+    <div class="val"><div class="a" style="font-size:13px">${(v/tot*100).toFixed(1)}%</div><div class="b">${fMon(deUSD(v,verMon),verMon)}/mes</div></div></div>`;}).join('')
   +`<div class="mini">Cada plan mantiene su propio reparto. Este es el efecto neto, solo para que lo veas.</div>`
   :'<div class="vacio">Sin planes activos.</div>';
  document.getElementById('hist').innerHTML=compras.length?`<table><thead><tr><th>Fecha</th><th>Plan</th><th>Monto</th><th>Detalle</th><th></th></tr></thead><tbody>`+
   compras.slice().sort((a,b)=>b.f.localeCompare(a.f)).slice(0,40).map(c=>{const p=plan(c.planId);
    return `<tr class="clic" data-e="${c.id}"><td>${c.f.slice(8,10)}/${c.f.slice(5,7)}/${c.f.slice(2,4)}${c.tipo==='inicial'?'<span style="color:var(--amber);font-size:8px;display:block">INICIAL</span>':''}</td>
     <td><span style="color:${p?p.color:'var(--tx3)'}">●</span> ${p?p.nombre.slice(0,10):'—'}</td>
-    <td>${c.monto?fMon(c.monto,c.moneda||'USD'):(c.usd?fMon(c.usd,'USD'):'—')}</td>
+    <td>${c.monto?fMon(c.monto,c.moneda||'USD'):'—'}${c.usd&&c.moneda!=='USD'?`<br><span style="color:var(--tx3);font-size:9px">${fMon(c.usd,'USD')}</span>`:''}</td>
     <td style="font-size:9.5px;color:var(--tx3)">${c.items.map(i=>i.a+' '+(+i.q).toFixed(+i.q<1?5:3)).join(' · ')}</td><td><span style="color:var(--tx3)">✎</span></td></tr>`;}).join('')+'</tbody></table>'
   :'<div class="vacio">Sin compras registradas.</div>';
  document.querySelectorAll('#hist tr[data-e]').forEach(r=>r.onclick=()=>{const c=compras.find(x=>x.id==r.dataset.e);if(c)abrirModal(c.f,c.id,c.planId);});}
+window.omitir=async(planId,f,motivo)=>{omitidas.push({planId,f,motivo});await guardar();pintar();};
+window.verOmitidas=()=>{
+ document.getElementById('modTit').textContent='Compras omitidas';
+ document.getElementById('modCuerpo').innerHTML=omitidas.length?omitidas.slice().sort((a,b)=>b.f.localeCompare(a.f)).map((o,i)=>{const p=plan(o.planId);
+  return `<div class="opt"><span class="nm"><span style="color:${p?p.color:'var(--tx3)'}">●</span> ${fFecha(new Date(o.f+'T12:00'))} · ${p?p.nombre:'—'}<br><span style="font-size:11px;color:var(--tx3)">${o.motivo}</span></span>
+   <button class="sec" style="width:auto;padding:6px 11px;font-size:11.5px" onclick="restaurar(${omitidas.indexOf(o)})">Restaurar</button></div>`;}).join('')
+  :'<div class="vacio">No hay compras omitidas.</div>';
+ document.getElementById('modal').classList.add('on');};
+window.restaurar=async i=>{omitidas.splice(i,1);await guardar();cerrar();pintar();};
 window.togglePlan=async id=>{const p=plan(id);p.activo=!p.activo;await guardar();pintar();};
 window.irA=v=>document.querySelector(`nav button[data-v="${v}"]`).click();
 
@@ -526,13 +636,18 @@ window.abrirModal=function(f,id,planId){
     const est=esperado&&px(a.s,p.moneda)?(esperado*a.pct/100*(1-p.comision/100)/px(a.s,p.moneda)):null;
     return `<div class="campo"><label>${a.n} — cantidad${est?` <span style="color:var(--tx3)">(≈${est.toFixed(est<1?6:4)})</span>`:''}</label>
      <input type="number" class="qN" data-a="${a.s}" step="any" inputmode="decimal" value="${q||''}" placeholder="${est?est.toFixed(est<1?6:4):'0.00'}"></div>`;}).join('')}
-   <div class="campo"><label>Total pagado (${p.moneda})</label><input type="number" id="mMonto" step="any" inputmode="decimal" value="${ed?(ed.monto||''):(esperado||'')}"></div>
+   <div class="campo"><label>Total pagado (${p.moneda})</label><input type="number" id="mMonto" step="any" inputmode="decimal" value="${ed?(ed.monto||''):(esperado||'')}">
+    <div class="mini" id="equiv" style="margin-top:6px"></div></div>
    ${esperado?`<button class="sec" id="usarEst" style="margin-bottom:10px">Usar las cantidades estimadas</button>`:''}
    <button class="pri" id="okCompra">${ed?'Guardar cambios':'Guardar compra'}</button>
    ${ed?`<button class="sec" id="borrarC" style="margin-top:8px;color:var(--coral)">Eliminar</button>`:''}`;
   document.getElementById('modCuerpo').innerHTML=h;
   document.querySelectorAll('.pl').forEach(b=>b.onclick=()=>{modalPlan=b.dataset.p;render();});
   document.querySelectorAll('.tT').forEach(b=>b.onclick=()=>{window._tipoPref=b.dataset.t;render();});
+  const eq=()=>{const el=document.getElementById('equiv');if(!el)return;const m=parseFloat(document.getElementById('mMonto').value);
+   if(!m){el.textContent='';return;}
+   const u=aUSD(m,p.moneda);el.innerHTML=p.moneda==='USD'?(deUSD(u,'ARS')!=null?`≈ ${fMon(deUSD(u,'ARS'),'ARS')}`:''):`≈ ${fMon(u,'USD')}  ·  tasa ${tasas[p.moneda]?tasas[p.moneda].toFixed(2):'—'}`;};
+  document.getElementById('mMonto').addEventListener('input',eq);eq();
   const ue=document.getElementById('usarEst');if(ue)ue.onclick=()=>{document.querySelectorAll('.qN').forEach(i=>{if(!i.value)i.value=i.placeholder;});};
   const bc=document.getElementById('borrarC');if(bc)bc.onclick=async()=>{compras=compras.filter(c=>c.id!=editId);await guardar();cerrar();pintar();};
   document.getElementById('okCompra').onclick=async()=>{
@@ -541,7 +656,7 @@ window.abrirModal=function(f,id,planId){
    if(!items.length){alert('Cargá al menos una cantidad.');return;}
    const monto=parseFloat(document.getElementById('mMonto').value)||null;
    const usd=monto!=null?(aUSD(monto,p.moneda)??usdItems):usdItems;
-   const rec={f:document.getElementById('mFecha').value||f,planId:modalPlan,custodia:document.getElementById('mCust').value,moneda:p.moneda,monto,usd,items,tipo};
+   const rec={f:document.getElementById('mFecha').value||f,planId:modalPlan,custodia:document.getElementById('mCust').value,moneda:p.moneda,monto,usd,tasa:(p.moneda==='USD'?1:(tasas[p.moneda]||null)),items,tipo};
    if(editId){Object.assign(compras.find(x=>x.id==editId),rec);}else compras.push({id:Date.now(),...rec});
    await guardar();cerrar();pintar();};};
  render();document.getElementById('modal').classList.add('on');};
@@ -576,7 +691,7 @@ function pintarProgreso(){
   else curva='<div class="mini" style="margin-top:7px">una compra más y aparece la curva</div>';
   return `<div class="card" style="margin-bottom:9px"><div style="display:flex;align-items:center;gap:11px"><div class="chip" style="background:${a.c}">${a.s.slice(0,3)}</div>
    <div style="flex:1;min-width:0"><div style="font-size:13px;color:var(--tx2)">${a.n} acumulado</div><div class="num" style="font-size:22px;font-weight:600">${q.toFixed(q<1?6:4)}</div></div>
-   <div style="text-align:right"><div class="num" style="font-size:14px">${p!=null?fMon(q*p,cfg.m1):'—'}</div></div></div>${curva}</div>`;}).join('')
+   <div style="text-align:right;font-size:14px">${p!=null?dual(q*px(a.s,'USD')):'—'}</div></div>${curva}</div>`;}).join('')
   :'<div class="vacio">Sin activos todavía.</div>';
  document.getElementById('efecto').innerHTML=A.map(a=>{const cs=ord.filter(c=>(c.tipo||'dca')==='dca'&&c.items.some(i=>i.a===a.s&&i.p));
   if(cs.length<2)return '';let g=0,q=0,s=0;cs.forEach(c=>{const i=c.items.find(x=>x.a===a.s);g+=i.q*i.p;q+=+i.q;s+=i.p;});
@@ -638,11 +753,11 @@ function pintarEscenarios(){
   const base=cfg.baseEsc==='ath'?(athx[a.s]?athx[a.s].ath:pa):pa;const q=(t[a.s]||0)+((obj[a.s]||0)*mFalt)/pa*0.99;val+=q*base*e.m;});
   return {...e,val,realizado:val*vende*CAP,retenido:val*cfg.nunca/100};});
  const mx=Math.max(...filas.map(f=>f.realizado+f.retenido))||1;
- ce.innerHTML=`<div style="font-size:12.5px;color:var(--tx2);margin-bottom:14px">Sumando todos los planes: ${fMon(invFut,'USD')} invertidos hasta ${fFecha(fin)}.</div>`+
+ ce.innerHTML=`<div style="font-size:12.5px;color:var(--tx2);margin-bottom:14px">Sumando todos los planes: ${fMon(deUSD(invFut,verMon),verMon)} invertidos hasta ${fFecha(fin)}.</div>`+
   filas.map((f,i)=>{const col=['var(--tx2)','var(--mint)','var(--amber)'][i]||'var(--mint)',tot=f.realizado+f.retenido;
    return `<div style="padding:12px 0;border-bottom:1px solid rgba(28,58,68,.5)"><div style="display:flex;justify-content:space-between;align-items:baseline">
     <div><span style="font-size:14px;font-weight:600">${f.n}</span><span class="num" style="font-size:10.5px;color:var(--tx3);margin-left:7px">×${f.m}</span></div>
-    <div style="text-align:right"><div class="num" style="font-size:17px;color:${col}">${fMon(tot,'USD')}</div><div class="num" style="font-size:10.5px;color:var(--tx3)">${(tot/invFut).toFixed(1)}× lo invertido</div></div></div>
+    <div style="text-align:right"><div style="font-size:17px;color:${col}">${dual(tot)}</div><div class="num" style="font-size:10.5px;color:var(--tx3)">${(tot/invFut).toFixed(1)}× lo invertido</div></div></div>
     <div class="barra" style="margin-top:8px"><i style="width:${(tot/mx*100).toFixed(1)}%;background:${col}"></i></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
      <div style="background:var(--void);border-radius:9px;padding:9px 10px"><div style="font-family:var(--mono);font-size:8.5px;color:var(--tx3)">VENDÉS ${(vende*100).toFixed(0)}%</div><div class="num" style="font-size:14px;color:${col}">${fMon(f.realizado,'USD')}</div></div>
@@ -753,11 +868,11 @@ document.getElementById('pdf').onclick=()=>{const {jsPDF}=window.jspdf,doc=new j
    doc.text(c.monto?fMon(c.monto,c.moneda):'—',M+180,y);doc.setTextColor(120,138,146);doc.setFontSize(7);doc.text(c.items.map(i=>i.a+' '+(+i.q).toFixed(+i.q<1?5:3)).join(' ').slice(0,50),M+270,y);y+=14;});}
  const pg=doc.internal.getNumberOfPages();for(let i=1;i<=pg;i++){doc.setPage(i);doc.setFont('courier','normal');doc.setFontSize(7);doc.setTextColor(150,165,172);doc.text('No es asesoramiento financiero',M,822);doc.text(i+'/'+pg,W-M,822,{align:'right'});}
  doc.save(`informe-${new Date().toISOString().slice(0,10)}.pdf`);};
-document.getElementById('exportar').onclick=()=>{const b=new Blob([JSON.stringify({v:4,cfg,planes,compras,transfers},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`plan-dca-${new Date().toISOString().slice(0,10)}.json`;a.click();};
+document.getElementById('exportar').onclick=()=>{const b=new Blob([JSON.stringify({v:5,cfg,planes,compras,transfers,omitidas},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`plan-dca-${new Date().toISOString().slice(0,10)}.json`;a.click();};
 document.getElementById('importarBtn').onclick=()=>document.getElementById('importar').click();
 document.getElementById('importar').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{try{const d=JSON.parse(r.result);
- if(d.cfg)cfg={...DEF,...d.cfg};if(d.planes)planes=d.planes;if(d.compras)compras=d.compras;if(d.transfers)transfers=d.transfers;await guardar();traerPrecios();alert('Importado.');}catch(err){alert('Formato no reconocido.');}};r.readAsText(f);};
-document.getElementById('borrarTodo').onclick=async()=>{if(!confirm('Se borra todo. No se puede deshacer.'))return;compras=[];transfers=[];cfg=JSON.parse(JSON.stringify(DEF));planes=JSON.parse(JSON.stringify(PLANES_DEF));await guardar();traerPrecios();};
+ if(d.cfg)cfg={...DEF,...d.cfg};if(d.planes)planes=d.planes;if(d.compras)compras=d.compras;if(d.transfers)transfers=d.transfers;if(d.omitidas)omitidas=d.omitidas;await guardar();traerPrecios();alert('Importado.');}catch(err){alert('Formato no reconocido.');}};r.readAsText(f);};
+document.getElementById('borrarTodo').onclick=async()=>{if(!confirm('Se borra todo. No se puede deshacer.'))return;compras=[];transfers=[];omitidas=[];cfg=JSON.parse(JSON.stringify(DEF));planes=JSON.parse(JSON.stringify(PLANES_DEF));await guardar();traerPrecios();};
 
 /* ============ PWA ============ */
 (function(){const icon=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#050B0E"/><circle cx="50" cy="50" r="30" fill="none" stroke="#3FE0AC" stroke-width="9" stroke-dasharray="130 60" stroke-linecap="round" transform="rotate(-90 50 50)"/><circle cx="50" cy="50" r="9" fill="#FFB443"/></svg>`;
@@ -770,7 +885,7 @@ document.getElementById('borrarTodo').onclick=async()=>{if(!confirm('Se borra to
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.vista').forEach(x=>x.classList.remove('on'));b.classList.add('on');document.getElementById('v-'+b.dataset.v).classList.add('on');window.scrollTo(0,0);});
 document.getElementById('mesAnt').onclick=()=>{mesVista.setMonth(mesVista.getMonth()-1);pintarCal();};
 document.getElementById('mesSig').onclick=()=>{mesVista.setMonth(mesVista.getMonth()+1);pintarCal();};
-function pintar(){pintarInicio();pintarPlanes();pintarCal();pintarProgreso();pintarCfg();}
+function pintar(){pintarInicio();pintarEvo();pintarDonut();pintarPlanes();pintarCal();pintarProgreso();pintarCfg();}
 (async()=>{await cargar();await traerPrecios();})();
 </script>
 </body>
