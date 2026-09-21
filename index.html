@@ -398,7 +398,9 @@ const OPS=[
   items:[{a:'BTC',q:0.00005613,p:78389},{a:'ETH',q:0.000771012,p:2438}]},
  {f:'2026-09-18',planId:'p2',custodia:'Ripio',moneda:'ARS',monto:10000,usd:6.27,tasa:1594.9,tipo:'dca',
   items:[{a:'BTC',q:0.00005405,p:81221},{a:'ETH',q:0.000725274,p:2592}]}];
-/* Saldo y costo que muestran las plataformas. Es el número contra el que se cuadra. */
+/* Saldo y costo que muestran las plataformas. Es el número contra el que se cuadra.
+   Si cambian estos datos, subí VERIF_V y la app se vuelve a cuadrar sola una vez. */
+const VERIF_V='2026-09-21/iol-128.71';
 const SALDOS={
  p1:{n:'IOL cripto',BTC:0.00139389,ETH:0.01134486,costo:128.71},
  p2:{n:'Ripio',BTC:0.00017306,ETH:0.001496604814477996,costo:17.25}};
@@ -414,15 +416,16 @@ const DB={
   try{window.localStorage.setItem(k,v);return true;}catch(e){return false;}},
  async get(k){if(this.tiene()){try{const r=await window.storage.get(k);if(r&&r.value)return r.value;}catch(e){}}
   try{return window.localStorage.getItem(k);}catch(e){return null;}}};
-let ultGuardado=null, guardadoOk=true;
+const VERSION='2026-09-21c';   /* se muestra en Ajustes: sirve para saber qué build estás corriendo */
+let ultGuardado=null, guardadoOk=true, conciliado=null;
 async function guardar(){
- const ok=await DB.set('dca:v4',JSON.stringify({cfg,planes,compras,transfers,omitidas,verMon,sembrado:true,ts:Date.now()}));
+ const ok=await DB.set('dca:v4',JSON.stringify({cfg,planes,compras,transfers,omitidas,verMon,sembrado:true,conciliado,ts:Date.now()}));
  guardadoOk=ok;ultGuardado=Date.now();const el=document.getElementById('estadoGuardado');
  if(el)el.innerHTML=ok?'<span class="pulso"></span>guardado':'<span style="color:var(--coral)">no se pudo guardar</span>';}
 async function cargar(){
  try{const v=await DB.get('dca:v4');if(v){const d=JSON.parse(v);
   cfg={...DEF,...(d.cfg||{})};planes=d.planes||planes;compras=d.compras||[];transfers=d.transfers||[];omitidas=d.omitidas||[];verMon=d.verMon||'USD';
-  if(!compras.length&&!d.sembrado)await conciliar(false);
+  conciliado=d.conciliado||null;
   return;}}catch(e){}
  try{const v3=await DB.get('dca:v3');if(v3){const d=JSON.parse(v3);const o=d.cfg||{};
   cfg={...DEF,titulo:o.titulo||DEF.titulo,sub:o.sub||DEF.sub,m1:o.m1||'USD',m2:o.m2||'ARS',feriados:o.feriados||FER_DEF,
@@ -432,8 +435,7 @@ async function cargar(){
    modoDia:o.modoDia||'habil',habilN:o.habilN||3,diaMes:o.diaMes||1,aporte:o.aporte||70,aporteB:o.aporteB||o.aporte||70,comision:o.comision??1};
   compras=(d.compras||[]).map(c=>({...c,planId:c.planId||'p1',custodia:c.custodia||'IOL cripto',moneda:c.moneda||'USD'}));
   await guardar();return;}}catch(e){}
- /* primera vez: arrancamos con lo que ya compraste */
- if(!compras.length)await conciliar(false);}
+ }
 
 /* Agrega las operaciones que falten y, si queda diferencia contra el saldo que
    muestra la plataforma, la cierra con un único asiento de ajuste por plan. */
@@ -522,14 +524,6 @@ function pendientes(){
    ~6% por debajo del cripto: eso inflaba el costo en USD de todo lo comprado en pesos
    y fabricaba una pérdida que no existía. Acá lo tomamos de la fuente correcta. */
 let fuenteARS='—';
-/* Las compras en pesos viejas quedaron con un costo en USD inflado porque se
-   convirtieron al ARS de CoinGecko. Reescalamos su tasa por el mismo factor que
-   separa hoy a las dos fuentes: conserva la relación histórica y saca el sesgo. */
-async function corregirARS(cg,tc){
- const f=cg/tc;if(!(f>0)||Math.abs(f-1)<0.002)return;let n=0;
- compras.forEach(c=>{if(c.moneda==='ARS'&&c.fuente!=='cripto'&&c.monto>0&&c.tasa>100){
-  c.tasa=c.tasa/f;c.usd=c.monto/c.tasa;c.fuente='cripto';n++;}});
- if(n){await guardar();}}
 async function tasaCripto(){
  try{const r=await fetch('https://criptoya.com/api/usdt/ars/1');const j=await r.json();
   if(j&&typeof j==='object'){
@@ -548,9 +542,8 @@ async function traerPrecios(){
    const j=await r.json();precios={};camb={};A.forEach(a=>{if(j[a.cg]){precios[a.s]=j[a.cg];camb[a.s]=j[a.cg].usd_24h_change;}});
    const ref=A.find(a=>precios[a.s]&&precios[a.s].usd);
    if(ref)mons.forEach(m=>{const v=precios[ref.s][m.toLowerCase()];if(v)tasas[m]=v/precios[ref.s].usd;});}catch(e){}
-  if(mons.includes('ARS')){const cg=tasas.ARS,tc=await tasaCripto();
-   if(tc){tasas.ARS=tc;if(cg>100)await corregirARS(cg,tc);}
-   else if(tasas.ARS)fuenteARS='CoinGecko · aproximado';}
+  if(mons.includes('ARS')){const tc=await tasaCripto();
+   if(tc)tasas.ARS=tc;else if(tasas.ARS)fuenteARS='CoinGecko · aproximado';}
   try{const r2=await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}`);
    const j2=await r2.json();athx={};j2.forEach(o=>{const a=A.find(x=>x.cg===o.id);if(a)athx[a.s]={ath:o.ath};});}catch(e){}
   if(!Object.keys(precios).length)await preciosPorClaude();}
@@ -1042,7 +1035,8 @@ function pintarCfg(){
  document.querySelectorAll('.eM').forEach(i=>i.onchange=async()=>{cfg.escenarios[i.dataset.i].m=+i.value||1;await guardar();pintar();});
  document.getElementById('pwaNota').textContent=window.matchMedia('(display-mode: standalone)').matches?'Instalada como app en tu pantalla de inicio.':'Para instalarla: menú del navegador → "Agregar a pantalla de inicio".';
  const ab=document.getElementById('avisoBackup');
- if(ab)ab.innerHTML=(DB.tiene()?'Datos en el almacenamiento de Claude.':
+ if(ab)ab.innerHTML=`<div style="margin-bottom:9px;padding-bottom:9px;border-bottom:1px solid rgba(28,58,68,.5)">Versión <b style="color:var(--mint);font-family:var(--mono)">${VERSION}</b> · cuadrado ${conciliado===VERIF_V?'<span style="color:var(--mint)">sí</span>':'<span style="color:var(--amber)">pendiente</span>'}</div>`
+  +(DB.tiene()?'Datos en el almacenamiento de Claude.':
   '<span style="color:var(--amber)">Tus datos viven en este navegador. Si borrás los datos de navegación, se pierden — exportá el JSON cada tanto.</span>')
   +`<div style="margin-top:9px;padding-top:9px;border-top:1px solid rgba(28,58,68,.5)">Dólar para convertir pesos: <b style="color:var(--mint);font-family:var(--mono)">${tasas.ARS?tasas.ARS.toFixed(2):'—'}</b> · ${fuenteARS}<br><span style="color:var(--tx3)">Es el dólar cripto (USDT/ARS), no el oficial: si no, el costo en pesos se infla ~6% y aparece una pérdida que no existe.</span></div>`;}
 ['cfgTitulo','cfgSub'].forEach((id,i)=>{const e=document.getElementById(id);e.oninput=async()=>{cfg[i?'sub':'titulo']=e.value;await guardar();document.getElementById(i?'subtitulo':'titulo').textContent=e.value;};});
@@ -1147,7 +1141,13 @@ document.querySelectorAll('nav button').forEach((b,i)=>b.onclick=()=>mostrar(i,0
 document.getElementById('mesAnt').onclick=()=>{mesVista.setMonth(mesVista.getMonth()-1);pintarCal();};
 document.getElementById('mesSig').onclick=()=>{mesVista.setMonth(mesVista.getMonth()+1);pintarCal();};
 function pintar(){pintarInicio();pintarEvo();pintarDonut();pintarPlanes();pintarCal();pintarProgreso();pintarCfg();}
-(async()=>{await cargar();await traerPrecios();})();
+(async()=>{
+ await cargar();
+ await traerPrecios();
+ /* El cuadre va acá, con los precios ya cargados, y una sola vez por versión de
+    datos verificados: después no vuelve a tocar nada de lo que edites o borres. */
+ if(conciliado!==VERIF_V){conciliado=VERIF_V;await conciliar(false);pintar();}
+})();
 </script>
 </body>
 </html>
