@@ -327,6 +327,8 @@ nav button.on{color:var(--mint)}
     <button class="sec" id="exportar" style="margin-top:9px">Exportar datos (JSON)</button>
     <button class="sec" id="importarBtn" style="margin-top:8px">Importar datos</button>
     <input type="file" id="importar" accept=".json" style="display:none">
+    <button class="sec" id="conciliar" style="margin-top:8px">Cuadrar con IOL y Ripio</button>
+    <div class="mini">Agrega las operaciones que falten y cierra la diferencia contra el saldo que muestran las plataformas. No toca lo que ya cargaste.</div>
     <button class="sec" id="borrarTodo" style="margin-top:8px;color:var(--coral)">Borrar todo</button>
     <div class="mini" id="pwaNota"></div><div class="mini" id="estadoGuardado" style="margin-top:4px"></div><div class="mini" id="avisoBackup"></div></div></section>
 </div></div>
@@ -371,31 +373,35 @@ const PLANES_DEF=[
   frecuencia:'semanal',modoDia:'fijo',habilN:3,diaMes:1,diaSemana:4,aporte:10000,aporteB:10000,
   activos:{BTC:70,ETH:30},comision:1.2,automatico:true,activo:true}];
 
-/* ============ compras ya hechas ============
-   Ripio: traído de su API, operación por operación. Cierra exacto contra el saldo
-   (0,00017306 BTC / 0,0014966048 ETH). IOL no expone la parte cripto, así que sale
-   despejado de la captura: 0,00139389 BTC (+9,96%) y 0,01134454 ETH (+16,43%) sobre
-   un costo de 128,71 USDT → 103,04 / 25,67, un reparto de 80,1/19,9 que es el 80/20
-   del plan. Esa coincidencia es la verificación. */
-const SEMILLA=[
- {id:1,f:'2026-08-20',planId:'p1',custodia:'IOL cripto',moneda:'USD',monto:52.67,usd:52.67,tasa:1,fuente:'cripto',tipo:'dca',
+/* ============ operaciones verificadas ============
+   Ripio sale de su API, operación por operación. IOL no expone la parte cripto,
+   así que va lo que muestra la app. Se agregan solo las que falten (se comparan
+   por plan + fecha), nunca pisan lo que ya cargaste a mano. */
+const OPS=[
+ {f:'2026-08-17',planId:'p1',custodia:'IOL cripto',moneda:'USD',monto:52.67,usd:52.67,tasa:1,tipo:'inicial',
   items:[{a:'BTC',q:0.00063758,p:66087},{a:'ETH',q:0.00537621,p:1959}]},
- {id:2,f:'2026-09-03',planId:'p1',custodia:'IOL cripto',moneda:'USD',monto:76.04,usd:76.04,tasa:1,fuente:'cripto',tipo:'dca',
-  items:[{a:'BTC',q:0.00075631,p:80433},{a:'ETH',q:0.00596833,p:2548}]},
+ {f:'2026-09-06',planId:'p1',custodia:'IOL cripto',moneda:'USD',monto:29.00,usd:29.00,tasa:1,tipo:'dca',
+  items:[{a:'BTC',q:0.000276,p:84058},{a:'ETH',q:0.00211,p:2749}]},
+ {f:'2026-09-10',planId:'p1',custodia:'IOL cripto',moneda:'USD',monto:47.04,usd:47.04,tasa:1,tipo:'dca',
+  items:[{a:'BTC',q:0.00048031,p:78351},{a:'ETH',q:0.00385865,p:2438}]},
  /* BTC que ya tenías en Ripio antes de arrancar el plan */
- {id:3,f:'2026-08-26',planId:'p2',custodia:'Ripio',moneda:'ARS',monto:2344,usd:1.47,tasa:1595,fuente:'cripto',tipo:'inicial',
+ {f:'2026-08-26',planId:'p2',custodia:'Ripio',moneda:'ARS',monto:2344,usd:1.47,tasa:1595,tipo:'inicial',
   items:[{a:'BTC',q:0.00002441,p:60221},{a:'ETH',q:0.000000318814478,p:2513}]},
- {id:4,f:'2026-08-27',planId:'p2',custodia:'Ripio',moneda:'ARS',monto:6999.11,usd:4.37,tasa:1601.6,fuente:'cripto',tipo:'dca',
+ {f:'2026-08-27',planId:'p2',custodia:'Ripio',moneda:'ARS',monto:6999.11,usd:4.37,tasa:1601.6,tipo:'dca',
   items:[{a:'BTC',q:0.00005474,p:79832}]},
  /* venta parcial del 2/9: 0,0000717 BTC → 8.665,06 ARS */
- {id:5,f:'2026-09-02',planId:'p2',custodia:'Ripio',moneda:'ARS',monto:-8665.06,usd:-5.53,tasa:1566.9,fuente:'cripto',tipo:'venta',
+ {f:'2026-09-02',planId:'p2',custodia:'Ripio',moneda:'ARS',monto:-8665.06,usd:-5.53,tasa:1566.9,tipo:'venta',
   items:[{a:'BTC',q:-0.0000717,p:77127}]},
- {id:6,f:'2026-09-03',planId:'p2',custodia:'Ripio',moneda:'ARS',monto:6998.74,usd:4.39,tasa:1594.2,fuente:'cripto',tipo:'dca',
+ {f:'2026-09-03',planId:'p2',custodia:'Ripio',moneda:'ARS',monto:6998.74,usd:4.39,tasa:1594.2,tipo:'dca',
   items:[{a:'BTC',q:0.00005543,p:79199}]},
- {id:7,f:'2026-09-10',planId:'p2',custodia:'Ripio',moneda:'ARS',monto:10000,usd:6.28,tasa:1592.4,fuente:'cripto',tipo:'dca',
+ {f:'2026-09-10',planId:'p2',custodia:'Ripio',moneda:'ARS',monto:10000,usd:6.28,tasa:1592.4,tipo:'dca',
   items:[{a:'BTC',q:0.00005613,p:78389},{a:'ETH',q:0.000771012,p:2438}]},
- {id:8,f:'2026-09-18',planId:'p2',custodia:'Ripio',moneda:'ARS',monto:10000,usd:6.27,tasa:1594.9,fuente:'cripto',tipo:'dca',
+ {f:'2026-09-18',planId:'p2',custodia:'Ripio',moneda:'ARS',monto:10000,usd:6.27,tasa:1594.9,tipo:'dca',
   items:[{a:'BTC',q:0.00005405,p:81221},{a:'ETH',q:0.000725274,p:2592}]}];
+/* Saldo y costo que muestran las plataformas. Es el número contra el que se cuadra. */
+const SALDOS={
+ p1:{n:'IOL cripto',BTC:0.00139389,ETH:0.01134486,costo:128.71},
+ p2:{n:'Ripio',BTC:0.00017306,ETH:0.001496604814477996,costo:17.25}};
 
 let cfg=JSON.parse(JSON.stringify(DEF)), planes=JSON.parse(JSON.stringify(PLANES_DEF));
 let compras=[], transfers=[], omitidas=[], precios={}, athx={}, tasas={}, camb={}, mesVista=new Date(), editId=null, modalPlan=null;
@@ -416,7 +422,7 @@ async function guardar(){
 async function cargar(){
  try{const v=await DB.get('dca:v4');if(v){const d=JSON.parse(v);
   cfg={...DEF,...(d.cfg||{})};planes=d.planes||planes;compras=d.compras||[];transfers=d.transfers||[];omitidas=d.omitidas||[];verMon=d.verMon||'USD';
-  if(!compras.length&&!d.sembrado){compras=JSON.parse(JSON.stringify(SEMILLA));await guardar();}
+  if(!compras.length&&!d.sembrado)await conciliar(false);
   return;}}catch(e){}
  try{const v3=await DB.get('dca:v3');if(v3){const d=JSON.parse(v3);const o=d.cfg||{};
   cfg={...DEF,titulo:o.titulo||DEF.titulo,sub:o.sub||DEF.sub,m1:o.m1||'USD',m2:o.m2||'ARS',feriados:o.feriados||FER_DEF,
@@ -427,7 +433,30 @@ async function cargar(){
   compras=(d.compras||[]).map(c=>({...c,planId:c.planId||'p1',custodia:c.custodia||'IOL cripto',moneda:c.moneda||'USD'}));
   await guardar();return;}}catch(e){}
  /* primera vez: arrancamos con lo que ya compraste */
- if(!compras.length){compras=JSON.parse(JSON.stringify(SEMILLA));await guardar();}}
+ if(!compras.length)await conciliar(false);}
+
+/* Agrega las operaciones que falten y, si queda diferencia contra el saldo que
+   muestra la plataforma, la cierra con un único asiento de ajuste por plan. */
+async function conciliar(avisar){
+ let nuevas=0,ajustes=[];
+ OPS.forEach(o=>{if(!compras.some(c=>c.planId===o.planId&&c.f===o.f)){
+  compras.push({...o,id:Date.now()+Math.floor(Math.random()*1e6),fuente:'cripto'});nuevas++;}});
+ Object.entries(SALDOS).forEach(([pid,s])=>{
+  const cs=compras.filter(c=>c.planId===pid);if(!cs.length)return;
+  const t={};cs.forEach(c=>c.items.forEach(i=>t[i.a]=(t[i.a]||0)+ +i.q));
+  const costo=cs.reduce((a,c)=>a+(+c.usd||0),0);
+  const items=[];['BTC','ETH'].forEach(a=>{const d=(s[a]||0)-(t[a]||0);
+   if(Math.abs(d)>1e-9)items.push({a,q:d,p:px(a,'USD')||null});});
+  const dc=+(s.costo-costo).toFixed(2);
+  if(!items.length&&Math.abs(dc)<0.01)return;
+  compras.push({id:Date.now()+Math.floor(Math.random()*1e6),f:iso(new Date()),planId:pid,
+   custodia:s.n,moneda:'USD',monto:dc,usd:dc,tasa:1,fuente:'cripto',tipo:'ajuste',items});
+  ajustes.push(`${s.n}: ${dc>=0?'+':''}${dc.toFixed(2)} USD`);});
+ await guardar();
+ if(avisar)alert(nuevas||ajustes.length
+  ?`Listo.\n\n${nuevas} operaciones agregadas.`+(ajustes.length?`\nAjuste al saldo real — ${ajustes.join(' · ')}`:'')
+  :'Ya estaba todo cargado: coincide con el saldo de las plataformas.');
+ return nuevas;}
 
 /* ============ utilidades ============ */
 const plan=id=>planes.find(p=>p.id===id);
@@ -712,7 +741,7 @@ function pintarPlanes(){
   :'<div class="vacio">Sin planes activos.</div>';
  document.getElementById('hist').innerHTML=compras.length?`<table><thead><tr><th>Fecha</th><th>Plan</th><th>Monto</th><th>Detalle</th><th></th></tr></thead><tbody>`+
   compras.slice().sort((a,b)=>b.f.localeCompare(a.f)).slice(0,40).map(c=>{const p=plan(c.planId);
-   return `<tr class="clic" data-e="${c.id}"><td>${c.f.slice(8,10)}/${c.f.slice(5,7)}/${c.f.slice(2,4)}${c.tipo==='inicial'?'<span style="color:var(--amber);font-size:8px;display:block">INICIAL</span>':c.tipo==='venta'?'<span style="color:var(--coral);font-size:8px;display:block">VENTA</span>':''}</td>
+   return `<tr class="clic" data-e="${c.id}"><td>${c.f.slice(8,10)}/${c.f.slice(5,7)}/${c.f.slice(2,4)}${c.tipo==='inicial'?'<span style="color:var(--amber);font-size:8px;display:block">INICIAL</span>':c.tipo==='venta'?'<span style="color:var(--coral);font-size:8px;display:block">VENTA</span>':c.tipo==='ajuste'?'<span style="color:var(--sky);font-size:8px;display:block">AJUSTE</span>':''}</td>
     <td><span style="color:${p?p.color:'var(--tx3)'}">●</span> ${p?p.nombre.slice(0,10):'—'}</td>
     <td>${c.monto?fMon(c.monto,c.moneda||'USD'):'—'}${c.usd&&c.moneda!=='USD'?`<br><span style="color:var(--tx3);font-size:9px">${fMon(c.usd,'USD')}</span>`:''}</td>
     <td style="font-size:9.5px;color:var(--tx3)">${c.items.map(i=>i.a+' '+(+i.q).toFixed(+i.q<1?5:3)).join(' · ')}</td><td><span style="color:var(--tx3)">✎</span></td></tr>`;}).join('')+'</tbody></table>'
@@ -1058,6 +1087,7 @@ document.getElementById('exportar').onclick=()=>{const b=new Blob([JSON.stringif
 document.getElementById('importarBtn').onclick=()=>document.getElementById('importar').click();
 document.getElementById('importar').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{try{const d=JSON.parse(r.result);
  if(d.cfg)cfg={...DEF,...d.cfg};if(d.planes)planes=d.planes;if(d.compras)compras=d.compras;if(d.transfers)transfers=d.transfers;if(d.omitidas)omitidas=d.omitidas;await guardar();traerPrecios();alert('Importado.');}catch(err){alert('Formato no reconocido.');}};r.readAsText(f);};
+document.getElementById('conciliar').onclick=async()=>{await conciliar(true);traerPrecios();};
 document.getElementById('borrarTodo').onclick=async()=>{if(!confirm('Se borra todo. No se puede deshacer.'))return;compras=[];transfers=[];omitidas=[];cfg=JSON.parse(JSON.stringify(DEF));planes=JSON.parse(JSON.stringify(PLANES_DEF));await guardar();traerPrecios();};
 
 /* ============ PWA ============ */
